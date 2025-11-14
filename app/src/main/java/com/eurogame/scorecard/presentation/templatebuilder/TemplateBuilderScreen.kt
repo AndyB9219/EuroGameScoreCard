@@ -17,6 +17,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.eurogame.scorecard.presentation.components.BackgroundImage
+import com.eurogame.scorecard.presentation.components.CategoryIcon
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,6 +205,25 @@ fun TemplateBuilderScreen(
                                 imeAction = ImeAction.Next
                             )
                         )
+
+                        // Background image preview
+                        if (state.backgroundImageUrl.isNotBlank()) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                BackgroundImage(
+                                    imageUrl = state.backgroundImageUrl,
+                                    contentDescription = "Background preview",
+                                    modifier = Modifier.fillMaxSize(),
+                                    alpha = 0.5f
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -397,6 +418,22 @@ private fun CategoryCard(
                 )
             )
 
+            // Icon preview
+            if (category.iconUrl.isNotBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CategoryIcon(
+                        iconUrl = category.iconUrl,
+                        contentDescription = "Icon preview",
+                        size = 48.dp
+                    )
+                }
+            }
+
             OutlinedTextField(
                 value = category.backgroundImageUrl,
                 onValueChange = onBackgroundImageUrlChange,
@@ -409,6 +446,25 @@ private fun CategoryCard(
                     imeAction = ImeAction.Next
                 )
             )
+
+            // Background image preview
+            if (category.backgroundImageUrl.isNotBlank()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    BackgroundImage(
+                        imageUrl = category.backgroundImageUrl,
+                        contentDescription = "Background preview",
+                        modifier = Modifier.fillMaxSize(),
+                        alpha = 0.3f
+                    )
+                }
+            }
         }
     }
 }
