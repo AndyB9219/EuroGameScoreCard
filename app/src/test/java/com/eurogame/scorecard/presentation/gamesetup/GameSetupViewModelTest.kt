@@ -1,6 +1,10 @@
 package com.eurogame.scorecard.presentation.gamesetup
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.eurogame.scorecard.data.storage.TemplateStorageManager
+import com.eurogame.scorecard.data.xml.CategoryTemplate
+import com.eurogame.scorecard.data.xml.GameTemplate
+import com.eurogame.scorecard.data.xml.ScorecardTemplate
 import com.eurogame.scorecard.domain.model.CategoryInput
 import com.eurogame.scorecard.domain.model.GameSetupData
 import com.eurogame.scorecard.domain.repository.GameRepository
@@ -28,13 +32,15 @@ class GameSetupViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: GameRepository
+    private lateinit var storageManager: TemplateStorageManager
     private lateinit var viewModel: GameSetupViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
-        viewModel = GameSetupViewModel(repository)
+        storageManager = mockk()
+        viewModel = GameSetupViewModel(repository, storageManager)
     }
 
     @After
@@ -317,5 +323,230 @@ class GameSetupViewModelTest {
         viewModel.clearError()
 
         assertNull(viewModel.state.value.error)
+    }
+
+    // Template loading tests
+
+    @Test
+    fun `loadFromTemplate populates all game fields from template`() = runTest {
+        val template = ScorecardTemplate(
+            game = GameTemplate(
+                name = "Wingspan",
+                subtitle = "European Edition",
+                designer = "Elizabeth Hargrave",
+                studio = "Stonemaier Games",
+                minPlayers = 1,
+                maxPlayers = 5,
+                backgroundImageUrl = "https://example.com/bg.png",
+                publishYear = 2019
+            ),
+            categories = listOf(
+                CategoryTemplate(
+                    name = "Birds",
+                    description = "Points from bird cards",
+                    iconUrl = "https://example.com/bird.png",
+                    backgroundImageUrl = "https://example.com/bird-bg.png",
+                    scoringRuleType = "sum",
+                    scoreIndex = 0
+                )
+            )
+        )
+
+        coEvery { storageManager.loadTemplate("wingspan.xml") } returns template
+
+        viewModel.loadFromTemplate("wingspan.xml")
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals("Wingspan", state.gameName)
+        assertEquals("European Edition", state.subtitle)
+        assertEquals("Elizabeth Hargrave", state.designer)
+        assertEquals("Stonemaier Games", state.studio)
+        assertEquals("1", state.minPlayers)
+        assertEquals("5", state.maxPlayers)
+        assertEquals("https://example.com/bg.png", state.backgroundImageUrl)
+        assertEquals("2019", state.publishYear)
+        assertEquals("wingspan.xml", state.templateId)
+    }
+
+    @Test
+    fun `loadFromTemplate populates categories from template`() = runTest {
+        val template = ScorecardTemplate(
+            game = GameTemplate(name = "Test Game"),
+            categories = listOf(
+                CategoryTemplate(
+                    name = "Category 1",
+                    description = "Description 1",
+                    iconUrl = "https://example.com/icon1.png",
+                    backgroundImageUrl = "https://example.com/bg1.png",
+                    scoringRuleType = "sum",
+                    scoreIndex = 0
+                ),
+                CategoryTemplate(
+                    name = "Category 2",
+                    description = "Description 2",
+                    iconUrl = "https://example.com/icon2.png",
+                    backgroundImageUrl = null,
+                    scoringRuleType = "max",
+                    scoreIndex = 1
+                )
+            )
+        )
+
+        coEvery { storageManager.loadTemplate("test.xml") } returns template
+
+        viewModel.loadFromTemplate("test.xml")
+        advanceUntilIdle()
+
+        val categories = viewModel.state.value.categories
+        assertEquals(2, categories.size)
+
+        assertEquals("Category 1", categories[0].title)
+        assertEquals("Description 1", categories[0].description)
+        assertEquals("https://example.com/icon1.png", categories[0].iconUrl)
+        assertEquals("https://example.com/bg1.png", categories[0].backgroundImageUrl)
+        assertEquals("sum", categories[0].scoringRuleType)
+        assertEquals(0, categories[0].scoreIndex)
+
+        assertEquals("Category 2", categories[1].title)
+        assertEquals("Description 2", categories[1].description)
+        assertEquals("https://example.com/icon2.png", categories[1].iconUrl)
+        assertEquals("", categories[1].backgroundImageUrl)
+        assertEquals("max", categories[1].scoringRuleType)
+        assertEquals(1, categories[1].scoreIndex)
+    }
+
+    @Test
+    fun `loadFromTemplate handles null optional fields`() = runTest {
+        val template = ScorecardTemplate(
+            game = GameTemplate(
+                name = "Test Game",
+                subtitle = null,
+                designer = null,
+                studio = null,
+                minPlayers = null,
+                maxPlayers = null,
+                backgroundImageUrl = null,
+                publishYear = null
+            ),
+            categories = listOf(
+                CategoryTemplate(
+                    name = "Category",
+                    description = null,
+                    iconUrl = null,
+                    backgroundImageUrl = null,
+                    scoringRuleType = null,
+                    scoreIndex = 0
+                )
+            )
+        )
+
+        coEvery { storageManager.loadTemplate("test.xml") } returns template
+
+        viewModel.loadFromTemplate("test.xml")
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals("Test Game", state.gameName)
+        assertEquals("", state.subtitle)
+        assertEquals("", state.designer)
+        assertEquals("", state.studio)
+        assertEquals("", state.minPlayers)
+        assertEquals("", state.maxPlayers)
+        assertEquals("", state.backgroundImageUrl)
+        assertEquals("", state.publishYear)
+
+        assertEquals("Category", state.categories[0].title)
+        assertEquals("", state.categories[0].description)
+        assertEquals("", state.categories[0].iconUrl)
+        assertEquals("", state.categories[0].backgroundImageUrl)
+        assertEquals("", state.categories[0].scoringRuleType)
+    }
+
+    @Test
+    fun `loadFromTemplate handles null template`() = runTest {
+        coEvery { storageManager.loadTemplate("nonexistent.xml") } returns null
+
+        viewModel.loadFromTemplate("nonexistent.xml")
+        advanceUntilIdle()
+
+        // State should remain unchanged when template is null
+        val state = viewModel.state.value
+        assertEquals("", state.gameName)
+        assertNull(state.templateId)
+    }
+
+    @Test
+    fun `loadFromTemplate handles storage exception`() = runTest {
+        coEvery { storageManager.loadTemplate("test.xml") } throws Exception("Storage error")
+
+        viewModel.loadFromTemplate("test.xml")
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.error?.contains("Failed to load template") == true)
+        assertTrue(viewModel.state.value.error?.contains("Storage error") == true)
+    }
+
+    @Test
+    fun `loadFromTemplate sets templateId for tracking`() = runTest {
+        val template = ScorecardTemplate(
+            game = GameTemplate(name = "Test Game"),
+            categories = listOf(CategoryTemplate(name = "Cat1", scoreIndex = 0))
+        )
+
+        coEvery { storageManager.loadTemplate("my_template.xml") } returns template
+
+        viewModel.loadFromTemplate("my_template.xml")
+        advanceUntilIdle()
+
+        assertEquals("my_template.xml", viewModel.state.value.templateId)
+    }
+
+    @Test
+    fun `createGame includes templateId when creating from template`() = runTest {
+        val template = ScorecardTemplate(
+            game = GameTemplate(name = "Wingspan"),
+            categories = listOf(CategoryTemplate(name = "Birds", scoreIndex = 0))
+        )
+
+        coEvery { storageManager.loadTemplate("wingspan.xml") } returns template
+        coEvery { repository.createGame(any()) } returns 1L
+
+        viewModel.loadFromTemplate("wingspan.xml")
+        advanceUntilIdle()
+
+        viewModel.onPlayerNameChange(0, "Alice")
+        viewModel.onPlayerNameChange(1, "Bob")
+        viewModel.createGame()
+        advanceUntilIdle()
+
+        coVerify {
+            repository.createGame(
+                match {
+                    it.gameName == "Wingspan" &&
+                    it.templateId == "wingspan.xml"
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `loadFromTemplate preserves player names if already set`() = runTest {
+        viewModel.onPlayerNameChange(0, "Alice")
+        viewModel.onPlayerNameChange(1, "Bob")
+
+        val template = ScorecardTemplate(
+            game = GameTemplate(name = "Test Game"),
+            categories = listOf(CategoryTemplate(name = "Cat1", scoreIndex = 0))
+        )
+
+        coEvery { storageManager.loadTemplate("test.xml") } returns template
+
+        viewModel.loadFromTemplate("test.xml")
+        advanceUntilIdle()
+
+        // Player names should be preserved (not reset by template)
+        assertEquals("Alice", viewModel.state.value.playerNames[0])
+        assertEquals("Bob", viewModel.state.value.playerNames[1])
     }
 }
