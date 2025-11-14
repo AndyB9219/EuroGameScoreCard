@@ -68,8 +68,10 @@ val repositoryModule = module {
 }
 
 val viewModelModule = module {
-    viewModel { GameSetupViewModel(get()) }
+    viewModel { GameSetupViewModel(get(), get()) }
     viewModel { ScorecardViewModel(get()) }
+    viewModel { com.eurogame.scorecard.presentation.templatebuilder.TemplateBuilderViewModel(get()) }
+    viewModel { com.eurogame.scorecard.presentation.templatebrowser.TemplateBrowserViewModel(get()) }
 }
 
 val appModules = listOf(

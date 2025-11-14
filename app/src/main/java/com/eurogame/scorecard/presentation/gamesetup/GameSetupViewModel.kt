@@ -3,6 +3,7 @@ package com.eurogame.scorecard.presentation.gamesetup
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eurogame.scorecard.data.storage.TemplateStorageManager
 import com.eurogame.scorecard.domain.model.CategoryInput
 import com.eurogame.scorecard.domain.model.GameSetupData
 import com.eurogame.scorecard.domain.repository.GameRepository
@@ -14,6 +15,14 @@ import kotlinx.coroutines.launch
 data class GameSetupState(
     val gameName: String = "",
     val description: String = "",
+    val subtitle: String = "",
+    val designer: String = "",
+    val studio: String = "",
+    val minPlayers: String = "",
+    val maxPlayers: String = "",
+    val backgroundImageUrl: String = "",
+    val publishYear: String = "",
+    val templateId: String? = null,
     val playerNames: List<String> = listOf("", ""),
     val categories: List<CategoryState> = listOf(CategoryState()),
     val isLoading: Boolean = false,
@@ -23,11 +32,17 @@ data class GameSetupState(
 
 data class CategoryState(
     val title: String = "",
-    val subtitle: String = ""
+    val subtitle: String = "",
+    val description: String = "",
+    val iconUrl: String = "",
+    val backgroundImageUrl: String = "",
+    val scoringRuleType: String = "",
+    val scoreIndex: Int = 0
 )
 
 class GameSetupViewModel(
-    private val repository: GameRepository
+    private val repository: GameRepository,
+    private val storageManager: TemplateStorageManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GameSetupState())
@@ -73,6 +88,40 @@ class GameSetupViewModel(
         _state.value = _state.value.copy(categories = updatedCategories)
     }
 
+    fun loadFromTemplate(templateFileName: String) {
+        viewModelScope.launch {
+            try {
+                val template = storageManager.loadTemplate(templateFileName)
+                if (template != null) {
+                    _state.value = _state.value.copy(
+                        gameName = template.game.name,
+                        subtitle = template.game.subtitle ?: "",
+                        designer = template.game.designer ?: "",
+                        studio = template.game.studio ?: "",
+                        minPlayers = template.game.minPlayers?.toString() ?: "",
+                        maxPlayers = template.game.maxPlayers?.toString() ?: "",
+                        backgroundImageUrl = template.game.backgroundImageUrl ?: "",
+                        publishYear = template.game.publishYear?.toString() ?: "",
+                        templateId = templateFileName,
+                        categories = template.categories.map {
+                            CategoryState(
+                                title = it.name,
+                                subtitle = "",
+                                description = it.description ?: "",
+                                iconUrl = it.iconUrl ?: "",
+                                backgroundImageUrl = it.backgroundImageUrl ?: "",
+                                scoringRuleType = it.scoringRuleType ?: "",
+                                scoreIndex = it.scoreIndex
+                            )
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(error = "Failed to load template: ${e.message}")
+            }
+        }
+    }
+
     fun addCategory() {
         _state.value = _state.value.copy(
             categories = _state.value.categories + CategoryState()
@@ -114,11 +163,24 @@ class GameSetupViewModel(
                 val setupData = GameSetupData(
                     gameName = currentState.gameName.trim(),
                     description = currentState.description.trim(),
+                    subtitle = currentState.subtitle.takeIf { it.isNotBlank() }?.trim(),
+                    designer = currentState.designer.takeIf { it.isNotBlank() }?.trim(),
+                    studio = currentState.studio.takeIf { it.isNotBlank() }?.trim(),
+                    minPlayers = currentState.minPlayers.toIntOrNull(),
+                    maxPlayers = currentState.maxPlayers.toIntOrNull(),
+                    backgroundImageUrl = currentState.backgroundImageUrl.takeIf { it.isNotBlank() }?.trim(),
+                    publishYear = currentState.publishYear.toIntOrNull(),
+                    templateId = currentState.templateId,
                     playerNames = validPlayers.map { it.trim() },
                     categories = validCategories.map {
                         CategoryInput(
                             title = it.title.trim(),
-                            subtitle = it.subtitle.takeIf { s -> s.isNotBlank() }?.trim()
+                            subtitle = it.subtitle.takeIf { s -> s.isNotBlank() }?.trim(),
+                            description = it.description.takeIf { s -> s.isNotBlank() }?.trim(),
+                            iconUrl = it.iconUrl.takeIf { s -> s.isNotBlank() }?.trim(),
+                            backgroundImageUrl = it.backgroundImageUrl.takeIf { s -> s.isNotBlank() }?.trim(),
+                            scoringRuleType = it.scoringRuleType.takeIf { s -> s.isNotBlank() }?.trim(),
+                            scoreIndex = it.scoreIndex
                         )
                     }
                 )

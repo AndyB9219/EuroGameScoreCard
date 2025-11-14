@@ -24,7 +24,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun GameSetupScreen(
     viewModel: GameSetupViewModel = koinViewModel(),
-    onGameCreated: () -> Unit
+    onGameCreated: () -> Unit,
+    onBrowseTemplates: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -52,6 +53,11 @@ fun GameSetupScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Euro Game Scorecard") },
+                actions = {
+                    TextButton(onClick = onBrowseTemplates) {
+                        Text("Templates", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
