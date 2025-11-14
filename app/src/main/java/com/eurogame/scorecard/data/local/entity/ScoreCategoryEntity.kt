@@ -22,6 +22,11 @@ data class ScoreCategoryEntity(
     val id: Long = 0,
     val gameId: Long,
     val title: String,
-    val subtitle: String?,
+    val subtitle: String? = null,
+    val description: String? = null,
+    val iconUrl: String? = null,
+    val backgroundImageUrl: String? = null,
+    val scoringRuleType: String? = null,
+    val scoreIndex: Int = 0,
     val orderIndex: Int
 )

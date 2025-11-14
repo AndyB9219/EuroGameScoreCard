@@ -32,6 +32,14 @@ class GameRepositoryImpl(
             GameEntity(
                 name = setupData.gameName,
                 description = setupData.description,
+                subtitle = setupData.subtitle,
+                designer = setupData.designer,
+                studio = setupData.studio,
+                minPlayers = setupData.minPlayers,
+                maxPlayers = setupData.maxPlayers,
+                backgroundImageUrl = setupData.backgroundImageUrl,
+                publishYear = setupData.publishYear,
+                templateId = setupData.templateId,
                 isActive = true
             )
         )
@@ -52,6 +60,11 @@ class GameRepositoryImpl(
                 gameId = gameId,
                 title = category.title,
                 subtitle = category.subtitle,
+                description = category.description,
+                iconUrl = category.iconUrl,
+                backgroundImageUrl = category.backgroundImageUrl,
+                scoringRuleType = category.scoringRuleType,
+                scoreIndex = category.scoreIndex,
                 orderIndex = index
             )
         }
@@ -134,6 +147,11 @@ class GameRepositoryImpl(
                     id = it.id,
                     title = it.title,
                     subtitle = it.subtitle,
+                    description = it.description,
+                    iconUrl = it.iconUrl,
+                    backgroundImageUrl = it.backgroundImageUrl,
+                    scoringRuleType = it.scoringRuleType,
+                    scoreIndex = it.scoreIndex,
                     orderIndex = it.orderIndex
                 )
             })
@@ -151,6 +169,14 @@ class GameRepositoryImpl(
             id = gameEntity.id,
             name = gameEntity.name,
             description = gameEntity.description,
+            subtitle = gameEntity.subtitle,
+            designer = gameEntity.designer,
+            studio = gameEntity.studio,
+            minPlayers = gameEntity.minPlayers,
+            maxPlayers = gameEntity.maxPlayers,
+            backgroundImageUrl = gameEntity.backgroundImageUrl,
+            publishYear = gameEntity.publishYear,
+            templateId = gameEntity.templateId,
             players = players,
             categories = categories,
             scores = scores,

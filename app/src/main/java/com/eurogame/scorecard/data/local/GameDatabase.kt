@@ -18,7 +18,7 @@ import com.eurogame.scorecard.data.local.entity.ScoreCategoryEntity
         ScoreCategoryEntity::class,
         PlayerScoreEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class GameDatabase : RoomDatabase() {
