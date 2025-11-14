@@ -1,14 +1,20 @@
 package com.eurogame.scorecard.presentation.scorecard
 
+import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.compose.ui.graphics.ImageBitmap
 import app.cash.turbine.test
 import com.eurogame.scorecard.domain.model.Game
 import com.eurogame.scorecard.domain.model.Player
 import com.eurogame.scorecard.domain.model.ScoreCategory
 import com.eurogame.scorecard.domain.repository.GameRepository
+import com.eurogame.scorecard.utils.ScreenshotUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -302,5 +308,235 @@ class ScorecardViewModelTest {
             val state = awaitItem()
             assertNotNull(state.game)
         }
+    }
+
+    @Test
+    fun `exportScorecard sets isExporting to true during export`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        // Delay the result to check isExporting state
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } coAnswers {
+            kotlinx.coroutines.delay(100)
+            Result.success("Image saved")
+        }
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isExporting)
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+
+        // Check that isExporting is true immediately after calling exportScorecard
+        assertTrue(viewModel.state.value.isExporting)
+
+        advanceUntilIdle()
+
+        // After completion, isExporting should be false again
+        assertFalse(viewModel.state.value.isExporting)
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard calls ScreenshotUtils with correct parameters`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.success("Image saved successfully")
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        coVerify {
+            ScreenshotUtils.saveImageToGallery(
+                mockContext,
+                mockBitmap,
+                "wingspan"  // Game name converted to lowercase with spaces replaced
+            )
+        }
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard sets exportMessage on success`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+        val successMessage = "Scorecard saved to Pictures/EuroGameScorecard/wingspan_20250314.png"
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.success(successMessage)
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.exportMessage)
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        assertEquals(successMessage, viewModel.state.value.exportMessage)
+        assertNull(viewModel.state.value.error)
+        assertFalse(viewModel.state.value.isExporting)
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard sets error on failure`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+        val errorException = Exception("Storage permission denied")
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.failure(errorException)
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.error?.contains("Failed to export scorecard") == true)
+        assertTrue(viewModel.state.value.error?.contains("Storage permission denied") == true)
+        assertNull(viewModel.state.value.exportMessage)
+        assertFalse(viewModel.state.value.isExporting)
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard handles exception during export`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } throws Exception("Unexpected error")
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.error?.contains("Failed to export scorecard") == true)
+        assertTrue(viewModel.state.value.error?.contains("Unexpected error") == true)
+        assertFalse(viewModel.state.value.isExporting)
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard uses default filename when game has no name`() = runTest {
+        val gameWithNoName = testGame.copy(name = "")
+        coEvery { repository.getActiveGame() } returns flowOf(gameWithNoName)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.success("Image saved")
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        coVerify {
+            ScreenshotUtils.saveImageToGallery(
+                mockContext,
+                mockBitmap,
+                ""  // Empty string becomes empty, default "scorecard" is in the util
+            )
+        }
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `exportScorecard sanitizes game name for filename`() = runTest {
+        val gameWithSpaces = testGame.copy(name = "Wingspan European Edition")
+        coEvery { repository.getActiveGame() } returns flowOf(gameWithSpaces)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.success("Image saved")
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        coVerify {
+            ScreenshotUtils.saveImageToGallery(
+                mockContext,
+                mockBitmap,
+                "wingspan_european_edition"  // Spaces replaced with underscores, lowercase
+            )
+        }
+
+        unmockkObject(ScreenshotUtils)
+    }
+
+    @Test
+    fun `clearExportMessage clears export message`() = runTest {
+        coEvery { repository.getActiveGame() } returns flowOf(testGame)
+        mockkObject(ScreenshotUtils)
+
+        val mockContext = mockk<Context>(relaxed = true)
+        val mockBitmap = mockk<ImageBitmap>(relaxed = true)
+
+        coEvery {
+            ScreenshotUtils.saveImageToGallery(any(), any(), any())
+        } returns Result.success("Image saved")
+
+        viewModel = ScorecardViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.exportScorecard(mockContext, mockBitmap)
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.state.value.exportMessage)
+
+        viewModel.clearExportMessage()
+
+        assertNull(viewModel.state.value.exportMessage)
+
+        unmockkObject(ScreenshotUtils)
     }
 }
