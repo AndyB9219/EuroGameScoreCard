@@ -1,6 +1,6 @@
 # Euro Game Scorecard
 
-A universal scorecard app for Euro-style board games. Track victory points across multiple categories for any game with any number of players.
+A universal scorecard Android app for Euro-style board games. Track victory points across multiple categories for any game with any number of players.
 
 ## Features
 
@@ -9,33 +9,70 @@ A universal scorecard app for Euro-style board games. Track victory points acros
 - **Category Details**: Add titles and optional subtitles for each scoring category
 - **Live Totals**: Automatically calculates total victory points for each player
 - **Winner Display**: Crown icon shows the current winner
-- **Responsive Design**: Works on desktop and mobile devices
+- **Persistent Storage**: Games are saved to a local Room database
+- **Material Design 3**: Modern, beautiful UI with light/dark theme support
+
+## Architecture
+
+This app follows modern Android development best practices:
+
+- **MVVM Architecture**: Clear separation of concerns with ViewModels
+- **Jetpack Compose**: Modern declarative UI framework
+- **Room Database**: Type-safe database with Flow-based reactive queries
+- **Koin**: Lightweight dependency injection
+- **Kotlin Coroutines & Flow**: Asynchronous and reactive programming
+- **Navigation Component**: Type-safe navigation between screens
+
+## Project Structure
+
+```
+app/src/main/java/com/eurogame/scorecard/
+├── data/
+│   ├── local/
+│   │   ├── dao/          # Database access objects
+│   │   ├── entity/       # Room entities
+│   │   └── GameDatabase.kt
+│   └── repository/       # Repository implementations
+├── domain/
+│   ├── model/           # Domain models
+│   └── repository/      # Repository interfaces
+├── presentation/
+│   ├── gamesetup/       # Game setup screen & ViewModel
+│   ├── scorecard/       # Scorecard screen & ViewModel
+│   ├── navigation/      # Navigation graph
+│   └── theme/           # Material 3 theming
+├── di/                  # Koin dependency injection modules
+├── GameApplication.kt
+└── MainActivity.kt
+```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm
+- Android Studio Hedgehog (2023.1.1) or newer
+- Android SDK 34
+- Minimum SDK 24 (Android 7.0)
+- Kotlin 1.9.20+
 
 ### Installation
 
+1. Clone the repository
 ```bash
-npm install
+git clone https://github.com/AndyB9219/EuroGameScoreCard.git
+cd EuroGameScoreCard
 ```
 
-### Development
+2. Open the project in Android Studio
 
-```bash
-npm run dev
-```
+3. Sync Gradle files
 
-Open your browser to the URL shown in the terminal (typically http://localhost:5173)
+4. Run the app on an emulator or physical device
 
 ### Build
 
 ```bash
-npm run build
+./gradlew assembleDebug
 ```
 
 ## How to Use
@@ -45,22 +82,36 @@ npm run build
    - Add optional description for your game session
    - Add player names (minimum 2 players)
    - Add scoring categories with titles and optional subtitles
-   - Click "Launch Game"
+   - Tap "Launch Game"
 
 2. **Track Scores**:
    - Enter scores for each player in each category
    - Totals are calculated automatically
-   - The current winner is shown with a crown icon
+   - The current winner is shown with a crown icon 👑
 
 3. **Start New Game**:
-   - Click "New Game" to reset and setup a new game session
+   - Tap "New Game" in the app bar to start a fresh game session
 
 ## Technology Stack
 
-- React 18
-- TypeScript
-- Vite
-- CSS3
+- **Language**: Kotlin
+- **UI**: Jetpack Compose with Material 3
+- **Architecture**: MVVM
+- **Database**: Room
+- **Dependency Injection**: Koin
+- **Async**: Kotlin Coroutines & Flow
+- **Navigation**: Navigation Compose
+- **Build Tool**: Gradle with Kotlin DSL
+
+## Dependencies
+
+- AndroidX Core KTX
+- Jetpack Compose (BOM 2024.01.00)
+- Material 3
+- Lifecycle & ViewModel
+- Room 2.6.1
+- Koin 3.5.3
+- Navigation Compose
 
 ## License
 
