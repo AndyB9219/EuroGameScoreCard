@@ -8,16 +8,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.eurogame.scorecard.domain.model.Player
 import com.eurogame.scorecard.domain.model.ScoreCategory
 import com.eurogame.scorecard.presentation.components.BackgroundImage
@@ -31,7 +36,20 @@ fun ScorecardScreen(
     onNewGame: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val graphicsLayer = rememberGraphicsLayer()
+
     var showNewGameDialog by remember { mutableStateOf(false) }
+
+    // Show export success message
+    LaunchedEffect(state.exportMessage) {
+        state.exportMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearExportMessage()
+        }
+    }
 
     if (showNewGameDialog) {
         AlertDialog(
@@ -76,12 +94,38 @@ fun ScorecardScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
+                    // Export button
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                val bitmap = graphicsLayer.toImageBitmap()
+                                viewModel.exportScorecard(context, bitmap)
+                            }
+                        },
+                        enabled = state.game != null && !state.isExporting
+                    ) {
+                        if (state.isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Export scorecard",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
                     TextButton(onClick = { showNewGameDialog = true }) {
                         Text("New Game", color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (state.isLoading) {
             Box(
@@ -118,7 +162,8 @@ fun ScorecardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(paddingValues)
+                    .drawLayer(graphicsLayer),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Game Header with Background Image

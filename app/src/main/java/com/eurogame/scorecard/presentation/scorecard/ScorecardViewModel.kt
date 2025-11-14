@@ -1,10 +1,13 @@
 package com.eurogame.scorecard.presentation.scorecard
 
+import android.content.Context
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eurogame.scorecard.domain.model.Game
 import com.eurogame.scorecard.domain.model.Player
 import com.eurogame.scorecard.domain.repository.GameRepository
+import com.eurogame.scorecard.utils.ScreenshotUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +16,9 @@ import kotlinx.coroutines.launch
 data class ScorecardState(
     val game: Game? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val exportMessage: String? = null,
+    val isExporting: Boolean = false
 )
 
 class ScorecardViewModel(
@@ -72,5 +77,40 @@ class ScorecardViewModel(
 
     fun clearError() {
         _state.value = _state.value.copy(error = null)
+    }
+
+    fun exportScorecard(context: Context, bitmap: ImageBitmap) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isExporting = true)
+            try {
+                val game = _state.value.game
+                val fileName = game?.name?.replace(" ", "_")?.lowercase() ?: "scorecard"
+                val result = ScreenshotUtils.saveImageToGallery(context, bitmap, fileName)
+
+                result.fold(
+                    onSuccess = { message ->
+                        _state.value = _state.value.copy(
+                            exportMessage = message,
+                            isExporting = false
+                        )
+                    },
+                    onFailure = { exception ->
+                        _state.value = _state.value.copy(
+                            error = "Failed to export scorecard: ${exception.message}",
+                            isExporting = false
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = "Failed to export scorecard: ${e.message}",
+                    isExporting = false
+                )
+            }
+        }
+    }
+
+    fun clearExportMessage() {
+        _state.value = _state.value.copy(exportMessage = null)
     }
 }
