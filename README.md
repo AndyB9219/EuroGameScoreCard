@@ -113,6 +113,54 @@ cd EuroGameScoreCard
 - Koin 3.5.3
 - Navigation Compose
 
+## Testing
+
+The project includes comprehensive unit tests for all major components:
+
+### Test Coverage
+
+- **ViewModel Tests** (`app/src/test/java/.../presentation/`)
+  - `GameSetupViewModelTest`: 20+ tests covering state management, validation, and repository interaction
+  - `ScorecardViewModelTest`: 18+ tests for score tracking, winner calculation, and error handling
+
+- **Repository Tests** (`app/src/test/java/.../data/repository/`)
+  - `GameRepositoryImplTest`: 15+ tests for data operations, entity mapping, and database interactions
+
+- **Domain Model Tests** (`app/src/test/java/.../domain/model/`)
+  - `PlayerTest`: Tests for score calculation logic and data class behavior
+  - `GameTest`: Tests for game model properties and score mapping
+  - `ScoreCategoryTest`: Tests for category model
+  - `GameSetupDataTest` & `CategoryInputTest`: Tests for setup data structures
+
+### Test Technologies
+
+- **JUnit 4**: Testing framework
+- **MockK**: Mocking library for Kotlin
+- **Kotlinx Coroutines Test**: Testing coroutines and Flows
+- **Turbine**: Testing Flow emissions
+- **Koin Test**: Testing dependency injection
+
+### Running Tests
+
+Run unit tests from Android Studio or via command line:
+
+```bash
+./gradlew test
+```
+
+Run specific test class:
+
+```bash
+./gradlew test --tests GameSetupViewModelTest
+```
+
+View test reports:
+
+```bash
+./gradlew test
+# Reports available at: app/build/reports/tests/testDebugUnitTest/index.html
+```
+
 ## License
 
 MIT
