@@ -28,5 +28,7 @@ data class ScoreCategoryEntity(
     val backgroundImageUrl: String? = null,
     val scoringRuleType: String? = null,
     val scoreIndex: Int = 0,
-    val orderIndex: Int
+    val orderIndex: Int,
+    val isOptional: Boolean = false,
+    val isEnabled: Boolean = true
 )

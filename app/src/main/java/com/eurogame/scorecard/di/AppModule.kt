@@ -34,6 +34,14 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add optional category support to score_categories table
+        database.execSQL("ALTER TABLE score_categories ADD COLUMN isOptional INTEGER NOT NULL DEFAULT 0")
+        database.execSQL("ALTER TABLE score_categories ADD COLUMN isEnabled INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 val databaseModule = module {
     single {
         Room.databaseBuilder(
@@ -41,7 +49,7 @@ val databaseModule = module {
             GameDatabase::class.java,
             "game_database"
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build()
     }

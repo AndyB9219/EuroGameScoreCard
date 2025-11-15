@@ -65,7 +65,9 @@ class GameRepositoryImpl(
                 backgroundImageUrl = category.backgroundImageUrl,
                 scoringRuleType = category.scoringRuleType,
                 scoreIndex = category.scoreIndex,
-                orderIndex = index
+                orderIndex = index,
+                isOptional = category.isOptional,
+                isEnabled = true  // All categories are enabled by default when game is created
             )
         }
         val categoryIds = scoreCategoryDao.insertAll(categoryEntities)
@@ -152,7 +154,9 @@ class GameRepositoryImpl(
                     backgroundImageUrl = it.backgroundImageUrl,
                     scoringRuleType = it.scoringRuleType,
                     scoreIndex = it.scoreIndex,
-                    orderIndex = it.orderIndex
+                    orderIndex = it.orderIndex,
+                    isOptional = it.isOptional,
+                    isEnabled = it.isEnabled
                 )
             })
         }

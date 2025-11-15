@@ -37,7 +37,8 @@ data class CategoryState(
     val iconUrl: String = "",
     val backgroundImageUrl: String = "",
     val scoringRuleType: String = "",
-    val scoreIndex: Int = 0
+    val scoreIndex: Int = 0,
+    val isOptional: Boolean = false
 )
 
 class GameSetupViewModel(

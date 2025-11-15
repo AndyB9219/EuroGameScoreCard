@@ -9,5 +9,7 @@ data class ScoreCategory(
     val backgroundImageUrl: String? = null,
     val scoringRuleType: String? = null,
     val scoreIndex: Int = 0,
-    val orderIndex: Int = 0
+    val orderIndex: Int = 0,
+    val isOptional: Boolean = false,
+    val isEnabled: Boolean = true
 )

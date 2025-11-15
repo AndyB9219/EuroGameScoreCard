@@ -91,7 +91,8 @@ object ScorecardXmlParser {
             iconUrl = parser.getAttributeValue(null, "iconUrl"),
             backgroundImageUrl = parser.getAttributeValue(null, "backgroundImageUrl"),
             scoringRuleType = parser.getAttributeValue(null, "scoringRuleType"),
-            scoreIndex = parser.getAttributeValue(null, "scoreIndex")?.toIntOrNull() ?: 0
+            scoreIndex = parser.getAttributeValue(null, "scoreIndex")?.toIntOrNull() ?: 0,
+            isOptional = parser.getAttributeValue(null, "isOptional")?.toBoolean() ?: false
         )
 
         parser.nextTag()
@@ -144,6 +145,9 @@ object ScorecardXmlParser {
             category.backgroundImageUrl?.let { serializer.attribute(null, "backgroundImageUrl", it) }
             category.scoringRuleType?.let { serializer.attribute(null, "scoringRuleType", it) }
             serializer.attribute(null, "scoreIndex", category.scoreIndex.toString())
+            if (category.isOptional) {
+                serializer.attribute(null, "isOptional", "true")
+            }
             serializer.endTag(null, "scoreCategory")
         }
 
@@ -179,6 +183,9 @@ object ScorecardXmlParser {
             category.backgroundImageUrl?.let { serializer.attribute(null, "backgroundImageUrl", it) }
             category.scoringRuleType?.let { serializer.attribute(null, "scoringRuleType", it) }
             serializer.attribute(null, "scoreIndex", category.scoreIndex.toString())
+            if (category.isOptional) {
+                serializer.attribute(null, "isOptional", "true")
+            }
             serializer.endTag(null, "scoreCategory")
         }
 

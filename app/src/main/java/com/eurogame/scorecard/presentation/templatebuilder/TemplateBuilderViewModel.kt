@@ -32,7 +32,8 @@ data class CategoryBuilderState(
     val iconUrl: String = "",
     val backgroundImageUrl: String = "",
     val scoringRuleType: String = "",
-    val scoreIndex: String = "0"
+    val scoreIndex: String = "0",
+    val isOptional: Boolean = false
 )
 
 class TemplateBuilderViewModel(

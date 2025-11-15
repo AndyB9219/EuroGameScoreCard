@@ -22,5 +22,6 @@ data class CategoryInput(
     val iconUrl: String? = null,
     val backgroundImageUrl: String? = null,
     val scoringRuleType: String? = null,
-    val scoreIndex: Int = 0
+    val scoreIndex: Int = 0,
+    val isOptional: Boolean = false
 )
